@@ -1,5 +1,9 @@
 # polySynth.js
-module to handle a polyphonic synth in JS
+
+This module is a wrapper to play around with the web audio API. It provides a 
+`polyphonicSynth` class.
+
+## Polyphonic Synth
 
 Module can be imported with
 
@@ -32,6 +36,8 @@ and
 
 `synth.noteOff(midi_note)`
 
+## Solfeggio helper
+
 A solfeggio-helper module is also provided, so one doesn't have to handle MIDI
 but human notation:
 
@@ -41,7 +47,8 @@ This solfeggio helper provides various functions :
 
 `Music.noteNameToMidi(human_note,absolute)` is used to performed conversion from note
 name (eg. C#) to MIDI (eg. 1). The facultative `absolute` flag, true by default,
-transposes the output note to medium registry (C# would output 61 instead of 1).
+transposes the output note to medium registry (if set to false, C# would output
+61 instead of 1).
 
 The base octave toggled by this flag can be set with `Music.setHeight(octaves)`.
 Default value for octaves argument is 5.

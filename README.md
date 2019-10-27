@@ -17,7 +17,7 @@ It can be used by creating a new instance of the synth:
 typically a master gain or a dynamic compressor and `envelope` is an object,
 which controls an ADSR envelope. It is defined as follows:
 
-```
+```javascript
 let envelope = {
   attackTime:[seconds],
   attackLevel:[0-1 range],
@@ -74,7 +74,7 @@ pentatonic by doing `Music.makeMode(2,[2,2,3,2])`.
 `Music.makeChord(chord_object)` is used to generate chords. To `chord_object` is
 defined by four parameters: its tonic, its mode, its degree and position.
 
-```
+```javascript
 let chord = {
   tonic:"C#",
   degree:2,
@@ -90,3 +90,31 @@ degree is the desired position of the chord within the defined scale, as usually
 written in roman numeration. Here we have a IInd degree of the C# scale in dorian
 mode, hence a D# minor. The position is the inversion of the chord. 0 means no
 inversion, 1 would mean the third of the chord is used as bass, and so on.
+
+## Example
+
+It is now possible to build a small sequencer, for example we create here a
+classic jazz II-V-I progression in Bb phrygian:
+
+```javascript
+(async () => {
+  let durations = [400,400,600];
+  let sequence = [2,5,1];
+  for (let i in sequence) {
+    let chord = {
+      tonic:"Bb",
+      degree:sequence[i],
+      mode:"E",
+      position:1
+    };
+    chord = Music.makeChord(chord);
+    let voices = chord.map(e => synth.noteOn(e));
+    await ((t) => {
+      return new Promise((resolve,reject) => {
+        setTimeout(() => { resolve(); },t)
+      })
+    })(durations[i]);
+    voices.map(e => synth.noteOff(e));
+  }
+})()
+```

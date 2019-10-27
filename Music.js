@@ -1,9 +1,9 @@
 class Solfeggio {
   constructor(height=5) {
+    this.setHeight(height);
     this.MAJOR = [2,2,1,2,2,2,1];
     this.SOLMISATION = this.defaultScale();
     this.MINOR = this.modeShift(this.MAJOR,5);
-    this.HEIGHT = 12*height;
     this.MODES_NAMES = [
       "IONIAN",
       "DORIAN",
@@ -27,12 +27,12 @@ class Solfeggio {
       : parseInt(note);
     return note;
   }
-  makeMode(note) {
+  makeMode(note,reference=this.MAJOR) {
     note = (isNaN(parseInt(note)))
       ? this.SOLMISATION.indexOf(note)
       : parseInt(note);
     note  = note % 12;
-    return this.modeShift(this.MAJOR,note);
+    return this.modeShift(reference,note);
   }
   defaultScale() {
     let scale = [];

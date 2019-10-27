@@ -92,7 +92,7 @@ class Solfeggio {
     );
     let chord = [chord_object.tonic];
     let degree_mode = this.modeShift(chord_object.mode,chord_object.degree-1);
-    [3,5,7,9,11].map(e => 
+    [3,5,7].map(e => 
       chord.push(chord_object.tonic+this.cumulativeSumToIndex(
         [0,...degree_mode],
         e-1

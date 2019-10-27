@@ -6,11 +6,13 @@ Module can be imported with
 `import { polyphonicSynth } from "./PolySynth.js";`
 
 It can be used by creating a new instance of the synth:
+
 `let synth = new polyphonicSynth(audioCtx,waveForm,output,envelope);`
 
 `waveForm` can be created with `audioCtx.createPeriodicWave()`, `output` is
 typically a master gain or a dynamic compressor and `envelope` is an object,
 which controls an ADSR envelope. It is defined as follows:
+
 ```
 let envelope = {
   attackTime:[seconds],

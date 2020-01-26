@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PolySynth</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script defer type="module" src="../menu.js"></script>
+  </head>
+  <body>
+    <header><h1>PolySynth</h1></header>
+    <main>
+<div id="output">
+<p id="master"><input id="master_gain" type="range" min="0" max="1000" value="500"></p>
+<input type="button" id="play" value="🎶">
+</div>
+<fieldset id="waveform"><legend>Define Waveform</legend>
+<input id="h0" type="range" min="0" max="1000" value="500">
+<input id="h1" type="range" min="0" max="1000" value="0">
+<input id="h2" type="range" min="0" max="1000" value="0">
+<input id="h3" type="range" min="0" max="1000" value="0">
+<input id="h4" type="range" min="0" max="1000" value="0">
+<input id="h5" type="range" min="0" max="1000" value="0">
+<input id="h6" type="range" min="0" max="1000" value="0">
+<input id="h7" type="range" min="0" max="1000" value="0">
+<input id="h8" type="range" min="0" max="1000" value="0">
+<input id="h9" type="range" min="0" max="1000" value="0">
+</fieldset>
+<div id="loop" style="display:none;">1</div>
+<textarea>
+(async () => {
+  Music.setHeight(3);
+  document.querySelector("#loop").innerHTML = "1";
+  while (document.querySelector("#loop").innerHTML == "1") {
+   (async () => {
+    let durations = [300,300,300,300,300,300];
+    let sequence = [2,2,5,5,1,1];
+      for (let i in sequence) {
+        let chord = {
+          tonic:"D",
+          degree:sequence[i],
+          mode:"D",
+          position:i
+        };
+        chord = Music.makeChord(chord);
+        let voices = chord.map(e => synth.noteOn(e));
+        await wait(durations[i]);
+        voices.map(e => synth.noteOff(e));
+        await wait(durations[i]);
+      }
+    })();
+    (async () => {
+        let sequence = [2,5,1];
+        for (let i in sequence) {
+          let chord = {
+            tonic:"D",
+            degree:sequence[i],
+            mode:"D",
+            position:i
+          };
+          chord = Music.makeChord(chord);
+          chord = chord.slice(0,3);
+          for (let j in chord) {
+            j = synth.noteOn(chord[j]+24);
+            await wait(200);
+            synth.noteOff(j);
+            await wait(200);
+          }
+        }
+    })();
+    if (document.querySelector("#loop").innerHTML != "1") {
+      break;
+    }
+    await wait(3600);
+  }
+})();
+</textarea>
+      <script type="module">
+import { Music } from "./Music.js";
+import { polyphonicSynth } from "./PolySynth.js";
+
+let visualize = (canvas,context,node) => {
+  let WIDTH = canvas.width;
+  let HEIGHT = canvas.height;
+  node.fftSize = 2048;
+  let bufferLength = node.fftSize;
+  let dataArray = new Uint8Array(bufferLength);
+  context.clearRect(0, 0, WIDTH, HEIGHT);
+  let draw = () => {
+    let drawVisual = requestAnimationFrame(draw);
+    node.getByteTimeDomainData(dataArray);
+    context.fillStyle = 'rgb(0, 0, 0)';
+    context.fillRect(0, 0, WIDTH, HEIGHT);
+    context.lineWidth = 4;
+    context.strokeStyle = 'rgb(0, 255, 0)';
+    context.beginPath();
+    let sliceWidth = WIDTH * 1.0 / bufferLength;
+    let x = 0;
+    for(let i = 0; i < bufferLength; i++) {
+      let v = dataArray[i] / 128.0;
+      let y = v * HEIGHT/2;
+      if(i === 0) {
+        context.moveTo(x, y);
+      } else {
+        context.lineTo(x, y);
+      }
+      x += sliceWidth;
+    }
+    context.lineTo(canvas.width, canvas.height/2);
+    context.stroke();
+  };
+  draw();
+};
+let getWaveform = () => {
+  let harmonics = [];
+  for (let i=0;i<10;i++) {
+    harmonics.push(parseInt(document.querySelector("#h"+i).value)/1000);
+  }
+  return harmonics;
+}
+(() => {
+  let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let master = audioCtx.createGain();
+  let compressor = audioCtx.createDynamicsCompressor();
+  let analyserNode = audioCtx.createAnalyser();
+  let canvas = document.createElement("canvas");
+  let context = canvas.getContext("2d");
+  canvas.height = 300;
+  canvas.width = 1000;
+  document.querySelector("#output").append(canvas);
+  let adsr = {
+    attackTime:0.06,
+    attackLevel:1,
+    decayTime:0.1,
+    decayLevel:0.3,
+    releaseTime:0.1,
+    linear:true
+  };
+  let synth = new polyphonicSynth(audioCtx,[1,1],compressor,adsr);
+  synth.setWave([1,...getWaveform()]);
+  compressor.connect(master);
+  master.connect(analyserNode);
+  analyserNode.connect(audioCtx.destination);
+  master.gain.value = document.querySelector("#master_gain").value/1000;
+  document.querySelector("#master_gain").addEventListener("input",e => {
+    master.gain.value = e.target.value/1000;
+  });
+  visualize(canvas,context,analyserNode);
+  let wait = (t) => {
+    return new Promise((resolve,reject) => {
+      setTimeout(() => { resolve(); },t)
+    })
+  };
+  let user_input;
+  document.querySelector("#play").addEventListener("click",async () => {
+    let user_input_string = document.querySelector("textarea").value;
+    document.querySelector("#loop").innerHTML = "0";
+    await wait(5000);
+    user_input = new Function("Music","synth","wait",user_input_string)
+    user_input(Music,synth,wait);
+  });
+  document.querySelector("#waveform").addEventListener("click", (e) => {
+    synth.setWave([1,...getWaveform()]);
+  });
+})()
+      </script>
+    </main>
+    <footer>
+    </footer>
+  </body>
+</html>

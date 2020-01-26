@@ -25,12 +25,23 @@ class Adsr {
 class polyphonicSynth {
   constructor(ctx,waveForm,output,env) {
     this.voices = [];
-    this.wave = waveForm;
     this.out = output;
     this.id = 0;
     this.envelope = new Adsr(env);
     this.context = ctx;
+    this.setWave(waveForm);
   }
+  createWave(harmonics) {
+    let phase = 0;
+    let real = new Float32Array(harmonics.length);
+    let imag = new Float32Array(harmonics.length);
+    for (let i in harmonics) {
+      real[i] = harmonics[i]*Math.cos(phase);
+      imag[i] = -harmonics[i]*Math.sin(phase);
+    }
+    return this.context.createPeriodicWave(real,imag);
+  }
+  setWave(harmonics_array) { this.wave = this.createWave(harmonics_array); }
   midiToFreq(midi_note) { return Math.pow(2,(midi_note-69)/12)*440 }
   getId() {
     this.id++;
@@ -45,11 +56,11 @@ class polyphonicSynth {
       envelopeGain.connect(this.out);
       this.voices.push({osc,id:voice_id,active:true,envelopeGain:envelopeGain});
       voice = this.voices.find(e => (e.id == voice_id));
-      osc.setPeriodicWave(this.wave);
       envelopeGain.connect(this.out);
       osc.connect(envelopeGain);
       osc.start();
     }
+    voice.osc.setPeriodicWave(this.wave);
     voice.osc.frequency.setValueAtTime(
       this.midiToFreq(midi_note),
       this.context.currentTime
